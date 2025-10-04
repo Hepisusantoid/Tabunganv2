@@ -7,26 +7,31 @@
 html,body{height:100%}
 body{margin:0;padding:72px 16px 20px;background:var(--bg);color:var(--text);font-family:Inter,system-ui,Arial,sans-serif}
 
-/* Sticky topbar (disembunyikan di link publik via JS) */
+/* Topbar (hilang di link publik via JS) */
 .topbar{position:fixed;top:0;left:0;right:0;z-index:50;background:linear-gradient(180deg,#0e0e0e 80%,transparent);backdrop-filter:saturate(1.2) blur(4px);padding:12px 14px;border-bottom:1px solid #111}
 .nav{display:flex;gap:8px;overflow:auto}
 .chip{padding:8px 12px;border-radius:999px;background:var(--chip);color:var(--text);text-decoration:none;border:1px solid var(--line);white-space:nowrap}
 .chip.active{background:var(--chipActive);border-color:#303030}
-.chip.danger{background:#2a1717;border-color:#3a1b1b}
 
-/* Cards & layout */
+/* Card & layout */
 .card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px;margin-bottom:16px}
-.row{display:flex;gap:8px;flex-wrap:wrap}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.row.between{justify-content:space-between}
 input,select{background:#1a1a1a;border:1px solid var(--line);color:var(--text);padding:10px;border-radius:10px;min-width:160px}
 button{background:var(--green);border:none;color:#fff;padding:10px 14px;border-radius:10px;cursor:pointer}
 button.secondary{background:#2b2b2b;border:1px solid #3a3a3a}
 button.danger{background:var(--red)}
 button.small{padding:6px 10px;font-size:.9rem}
-.table{width:100%;border-collapse:collapse;margin-top:8px}
-th,td{border-bottom:1px solid var(--line);padding:10px;text-align:left;vertical-align:top}
+
+.table-wrap{overflow-x:auto}
+.table{width:100%;border-collapse:collapse;margin-top:8px;min-width:640px}
+th,td{border-bottom:1px solid var(--line);padding:10px;text-align:left;vertical-align:top;white-space:nowrap}
+td:last-child, th:last-child{white-space:normal}
+
 .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:10px 0 16px}
 .stat{background:#111;border:1px solid var(--line);border-radius:12px;padding:12px}
 .stat.big{display:inline-block;min-width:260px}
+
 h1,h2{margin:6px 0 8px 0}
 .muted{color:var(--muted)}
 .muted.small{font-size:.85rem}
@@ -45,7 +50,4 @@ h1,h2{margin:6px 0 8px 0}
   body{padding-top:68px}
   .stats{grid-template-columns:1fr}
   input,select{min-width:unset;flex:1}
-  .table th:nth-child(4), .table td:nth-child(4){ /* kolom catatan wrap lebih baik */
-    min-width:160px;
-  }
 }
