@@ -1,10 +1,9 @@
 const els = {
   topbar: document.getElementById('topbar'),
+  // login & admin
   login: document.getElementById('login-section'),
   dash: document.getElementById('dashboard'),
-  nasabahTab: document.getElementById('nasabah-tab'),
-  tabs: document.querySelectorAll('.nav a[data-tab]'),
-  navLogout: document.getElementById('nav-logout'),
+  btnLogout: document.getElementById('btnLogout'),
 
   // numbers
   statNasabah: document.getElementById('statNasabah'),
@@ -13,7 +12,6 @@ const els = {
 
   // tables
   tBody: document.querySelector('#tNasabah tbody'),
-  tBody2: document.querySelector('#tNasabah2 tbody'),
 
   // admin forms
   namaBaru: document.getElementById('namaBaru'),
@@ -49,11 +47,10 @@ const fmt = n => new Intl.NumberFormat('id-ID',{style:'currency',currency:'IDR',
 const fmtNum = n => new Intl.NumberFormat('id-ID',{maximumFractionDigits:0}).format(Number(n)||0);
 const parseNum = s => Number((s||'').toString().replace(/[^\d]/g,'')) || 0;
 
-// ribuan bertitik saat mengetik
+// ribuan bertitik saat ketik
 function maskThousands(el){
   el.addEventListener('input', ()=>{
-    const raw = parseNum(el.value);
-    el.value = fmtNum(raw);
+    el.value = fmtNum(parseNum(el.value));
   });
 }
 ['saldoBaru','saldoEdit','pv-amount'].forEach(id=>{
@@ -61,20 +58,17 @@ function maskThousands(el){
   if (el) maskThousands(el);
 });
 
-// ====== public or admin mode? ======
+// ====== public vs admin ======
 const params = new URLSearchParams(location.search);
 const publicName = params.get('n');
 
 if (publicName) {
-  // mode publik: sembunyikan nav & tidak ada footer
-  if (els.topbar) els.topbar.style.display = 'none';
+  if (els.topbar) els.topbar.style.display = 'none';   // hilangkan nav di publik
   document.querySelectorAll('.tab').forEach(el => el.style.display = 'none');
-  els.navLogout.style.display = 'none';
   els.pv.style.display = 'block';
   loadPublic(publicName);
 } else {
   renderGate();
-  setupTabs();
 }
 
 // ====== API util ======
@@ -104,30 +98,11 @@ function renderGate(){
   const ok = isLogged();
   els.login.style.display = ok ? 'none' : 'block';
   els.dash.style.display  = ok ? 'block' : 'none';
-  els.nasabahTab.style.display = ok ? 'block' : 'none';
-  els.navLogout.style.display = ok ? 'inline-block' : 'none';
   if (ok) loadData();
 }
 
-// ====== tabs ======
-function setupTabs(){
-  els.tabs.forEach(a=>{
-    a.addEventListener('click', (e)=>{
-      e.preventDefault();
-      const tab = a.getAttribute('data-tab');
-      els.tabs.forEach(x=>x.classList.remove('active'));
-      a.classList.add('active');
-      document.querySelectorAll('.tab').forEach(el=>el.style.display='none');
-      if (tab === 'beranda') els.dash.style.display='block';
-      if (tab === 'nasabah') els.nasabahTab.style.display='block';
-      if (tab === 'admin') els.login.style.display = isLogged() ? 'none':'block';
-      window.scrollTo({top:0,behavior:'smooth'});
-    });
-  });
-}
-
-// ====== render tables ======
-function renderTables(){
+// ====== render admin ======
+function renderAdmin(){
   const list = state.nasabah || [];
   let total = 0; list.forEach(x=> total += Number(x.saldo||0));
   els.statNasabah.textContent = list.length;
@@ -147,21 +122,12 @@ function renderTables(){
     els.tBody.appendChild(tr);
   });
 
-  els.tBody2.innerHTML = '';
-  list.forEach(item=>{
-    const tr = document.createElement('tr');
-    const link = `${origin}/?n=${encodeURIComponent(item.nama)}`;
-    tr.innerHTML = `<td>${item.nama}</td><td>${fmt(item.saldo||0)}</td><td><a class="chip" href="${link}" target="_blank" rel="noopener">Buka</a></td>`;
-    els.tBody2.appendChild(tr);
-  });
-
-  // actions
   els.tBody.querySelectorAll('button[data-del]').forEach(btn=>{
     btn.addEventListener('click', async ()=>{
       const nama = btn.getAttribute('data-del');
       if(!confirm(`Hapus nasabah "${nama}"?`)) return;
       state.nasabah = (state.nasabah||[]).filter(x=>x.nama !== nama);
-      try{ await callPut(state); renderTables(); }
+      try{ await callPut(state); renderAdmin(); }
       catch(e){ alert(e.message); }
     });
   });
@@ -174,14 +140,13 @@ function renderTables(){
   });
 }
 
-// ====== load data (admin) ======
 async function loadData(){
   try{
     const data = await callGet();
     if (!Array.isArray(data.nasabah)) data.nasabah = [];
     data.nasabah = data.nasabah.map(x => ({ ...x, history: Array.isArray(x.history) ? x.history : [] }));
     state = data;
-    renderTables();
+    renderAdmin();
     els.msg.textContent = '';
   }catch(e){
     els.msg.textContent = 'GET error → ' + e.message;
@@ -202,8 +167,8 @@ function renderPublicHistory(list){
     const d = new Date(it.ts || Date.now());
     const tgl = d.toLocaleString('id-ID', { dateStyle:'medium', timeStyle:'short' });
     const jenis = (it.type || 'koreksi').toLowerCase();
-    const badgeClass = jenis === 'tambah' ? 'add' : jenis === 'tarik' ? 'withdraw' : 'koreksi';
-    tr.innerHTML = `<td>${tgl}</td><td><span class="badge ${badgeClass}">${jenis[0].toUpperCase()+jenis.slice(1)}</span></td><td>${fmt(it.amount||0)}</td><td>${it.note ? it.note : '-'}</td>`;
+    const cls = jenis === 'tambah' ? 'add' : jenis === 'tarik' ? 'withdraw' : 'koreksi';
+    tr.innerHTML = `<td>${tgl}</td><td><span class="badge ${cls}">${jenis[0].toUpperCase()+jenis.slice(1)}</span></td><td>${fmt(it.amount||0)}</td><td>${it.note||'-'}</td>`;
     els.pvHistory.appendChild(tr);
   });
 }
@@ -220,14 +185,21 @@ async function loadPublic(name){
       const msg = `Halo Mas Hepi, saya *${nas.nama}* ingin *${action}* sebesar *${fmt(nominal)}*. (Link: ${origin}/?n=${encodeURIComponent(nas.nama)})`;
       return `https://wa.me/6285346861655?text=${encodeURIComponent(msg)}`;
     };
+
     els.pvAdd.addEventListener('click', ()=>{
       const a = els.pvAmount.value;
-      if(!parseNum(a)){ alert('Isi nominal dulu'); return; }
+      const n = parseNum(a);
+      if(!n){ alert('Isi nominal dulu'); return; }
       location.href = wa('add', a);
     });
     els.pvWithdraw.addEventListener('click', ()=>{
       const a = els.pvAmount.value;
-      if(!parseNum(a)){ alert('Isi nominal dulu'); return; }
+      const n = parseNum(a);
+      if(!n){ alert('Isi nominal dulu'); return; }
+      if (n > Number(nas.saldo||0)) { // VALIDASI PUBLIK
+        alert('Nominal penarikan melebihi saldo Anda. Silakan kurangi nominal.');
+        return;
+      }
       location.href = wa('withdraw', a);
     });
   }catch(e){
@@ -245,10 +217,9 @@ document.getElementById('btnLogin')?.addEventListener('click', async ()=>{
     const j = await r.json();
     if(!r.ok || !j.ok){ els.loginMsg.textContent = j.message || 'Login gagal'; return; }
     setLogged(true);
-    document.querySelector('.nav a[data-tab="beranda"]')?.click();
   }catch(e){ els.loginMsg.textContent = 'Error login'; }
 });
-els.navLogout?.addEventListener('click', ()=> setLogged(false));
+els.btnLogout?.addEventListener('click', ()=> setLogged(false));
 
 // ====== admin actions ======
 els.btnTambah?.addEventListener('click', async ()=>{
@@ -260,7 +231,7 @@ els.btnTambah?.addEventListener('click', async ()=>{
   const now = Date.now();
   const history = saldo > 0 ? [{ ts: now, type: 'tambah', amount: saldo, note: 'Setoran awal' }] : [];
   state.nasabah = [...(state.nasabah||[]), { nama, saldo, history }];
-  try{ await callPut(state); els.namaBaru.value=''; els.saldoBaru.value=''; renderTables(); }
+  try{ await callPut(state); els.namaBaru.value=''; els.saldoBaru.value=''; renderAdmin(); }
   catch(e){ alert(e.message); }
 });
 
@@ -272,8 +243,7 @@ function buildCustomTs(dateStr, timeStr){
     isFinite(Y)?Y:new Date().getFullYear(),
     isFinite(M)?(M-1):new Date().getMonth(),
     isFinite(D)?D:new Date().getDate(),
-    isFinite(h)?h:9,
-    isFinite(m)?m:0, 0, 0
+    isFinite(h)?h:9, isFinite(m)?m:0, 0, 0
   );
   return dt.getTime();
 }
@@ -281,7 +251,7 @@ function buildCustomTs(dateStr, timeStr){
 els.btnEdit?.addEventListener('click', async ()=>{
   const nama = (els.namaEdit.value||'').trim();
   let jumlah = parseNum(els.saldoEdit.value);
-  const mode = els.aksiEdit.value; // tambah/kurangi/koreksi
+  const mode = els.aksiEdit.value;
   const note = (els.catatanEdit.value||'').trim();
   const ts   = buildCustomTs(els.tglEdit.value, els.jamEdit.value);
 
@@ -296,15 +266,14 @@ els.btnEdit?.addEventListener('click', async ()=>{
   let delta = jumlah;
 
   if(mode === 'kurangi'){
-    // VALIDASI: tidak boleh tarik > saldo
+    // VALIDASI ADMIN: tidak boleh tarik > saldo
     if (jumlah > Number(curr.saldo||0)) {
-      alert('Penarikan melebihi saldo. Tidak disetujui.');
+      alert(`Penarikan (${fmt(jumlah)}) melebihi saldo (${fmt(curr.saldo||0)}). Tidak disetujui.`);
       return;
     }
     delta = -Math.abs(jumlah);
   }
   if(mode === 'koreksi'){
-    // koreksi langsung set saldo ke jumlah
     delta = jumlah - Number(curr.saldo||0);
   }
 
@@ -323,7 +292,8 @@ els.btnEdit?.addEventListener('click', async ()=>{
 
   try{
     await callPut(state);
+    // reset form
     els.saldoEdit.value=''; els.catatanEdit.value=''; els.tglEdit.value=''; els.jamEdit.value='';
-    renderTables();
+    renderAdmin();
   }catch(e){ alert(e.message); }
 });
