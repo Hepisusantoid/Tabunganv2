@@ -9,14 +9,18 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
-  <nav class="nav">
-    <a href="#" id="nav-beranda" class="chip">Beranda</a>
-    <a href="#" id="nav-nasabah" class="chip">Nasabah</a>
-    <a href="#" id="nav-admin" class="chip">Admin</a>
-    <a href="#" id="nav-logout" class="chip danger" style="display:none">Logout</a>
-  </nav>
+  <!-- NAV -->
+  <header class="topbar">
+    <nav class="nav">
+      <a href="#" data-tab="beranda" class="chip active">Beranda</a>
+      <a href="#" data-tab="nasabah" class="chip">Nasabah</a>
+      <a href="#" data-tab="admin" class="chip">Admin</a>
+      <a href="#" id="nav-logout" class="chip danger" style="display:none">Logout</a>
+    </nav>
+  </header>
 
-  <section id="login-section" class="card">
+  <!-- LOGIN -->
+  <section id="login-section" class="card tab admin-tab">
     <h2>Login Admin</h2>
     <div class="row">
       <input id="user" placeholder="Username">
@@ -26,30 +30,27 @@
     <p id="loginMsg" class="muted"></p>
   </section>
 
-  <section id="dashboard" class="card" style="display:none">
+  <!-- DASHBOARD -->
+  <section id="dashboard" class="card tab beranda-tab" style="display:none">
     <h1>Dashboard Tabungan</h1>
     <p id="msg" class="warn"></p>
 
     <div class="stats">
-      <div class="stat">
-        <small>Total Nasabah</small>
-        <h2 id="statNasabah">0</h2>
-      </div>
-      <div class="stat">
-        <small>Total Saldo</small>
-        <h2 id="statSaldo">Rp 0</h2>
-      </div>
-      <div class="stat">
-        <small>Saldo Rata-rata</small>
-        <h2 id="statRata">Rp 0</h2>
-      </div>
+      <div class="stat"><small>Total Nasabah</small><h2 id="statNasabah">0</h2></div>
+      <div class="stat"><small>Total Saldo</small><h2 id="statSaldo">Rp 0</h2></div>
+      <div class="stat"><small>Saldo Rata-rata</small><h2 id="statRata">Rp 0</h2></div>
     </div>
 
+    <div class="divider"></div>
+
     <h2>Daftar Nasabah</h2>
-    <table id="tNasabah">
-      <thead><tr><th>Nama</th><th>Saldo</th><th>Aksi</th></tr></thead>
+    <div class="muted">Tekan “Link” untuk salin tautan publik nasabah (tanpa login).</div>
+    <table id="tNasabah" class="table">
+      <thead><tr><th>Nama</th><th>Saldo</th><th>Aksi</th><th>Link</th></tr></thead>
       <tbody></tbody>
     </table>
+
+    <div class="divider"></div>
 
     <h2>Tambah Nasabah Baru</h2>
     <div class="row">
@@ -70,9 +71,36 @@
     </div>
   </section>
 
-  <footer class="footer">
-    <small>Tabungan v2 • JSONBin + Vercel</small>
-  </footer>
+  <!-- TAB NASABAH (hanya daftar ringkas) -->
+  <section id="nasabah-tab" class="card tab nasabah-tab" style="display:none">
+    <h2>Nasabah</h2>
+    <table id="tNasabah2" class="table">
+      <thead><tr><th>Nama</th><th>Saldo</th><th>Link</th></tr></thead>
+      <tbody></tbody>
+    </table>
+  </section>
+
+  <!-- HALAMAN PUBLIK: /?n=Nama -->
+  <section id="public-view" class="card" style="display:none">
+    <h1 id="pv-title">Tabungan</h1>
+    <p class="muted" id="pv-note">Tautan pribadi nasabah.</p>
+    <div class="stat big">
+      <small>Saldo Anda</small>
+      <h2 id="pv-saldo">Rp 0</h2>
+    </div>
+
+    <div class="row">
+      <input id="pv-amount" placeholder="Nominal (contoh 100000)" inputmode="numeric">
+    </div>
+    <div class="row">
+      <button id="pv-add">Tambah Tabungan</button>
+      <button id="pv-withdraw" class="secondary">Tarik Tabungan</button>
+    </div>
+
+    <div class="muted small">Aksi akan membuka WhatsApp ke admin.</div>
+  </section>
+
+  <footer class="footer"><small>Tabungan v2 • JSONBin + Vercel</small></footer>
 
   <script src="/app.js"></script>
 </body>
