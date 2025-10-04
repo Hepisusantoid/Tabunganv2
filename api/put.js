@@ -1,4 +1,4 @@
-export const config = { runtime: 'nodejs18.x' };
+// export const config = { runtime: 'nodejs18.x' }; // HAPUS / GANTI
 
 export default async function handler(req, res) {
   try {
@@ -14,13 +14,12 @@ export default async function handler(req, res) {
     }
 
     const url = `${JSONBIN_BASE}/b/${JSONBIN_BIN_ID}`;
-
     const r = await fetch(url, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
-        'X-Master-Key': JSONBIN_MASTER_KEY
-        // Jika ingin non-versions: 'X-Bin-Versioning': 'false'
+        'X-Master-Key': JSONBIN_MASTER_KEY,
+        'X-Bin-Versioning': 'false'
       },
       body: JSON.stringify(body)
     });
@@ -33,6 +32,6 @@ export default async function handler(req, res) {
     }
     return res.status(200).json({ ok: true });
   } catch (e) {
-    return res.status(500).json({ error: 'FETCH_THROWN', message: e?.message || String(e), name: e?.name });
+    return res.status(500).json({ error: 'FETCH_THROWN', message: e?.message || String(e) });
   }
 }
