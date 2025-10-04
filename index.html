@@ -30,7 +30,7 @@
     <p id="loginMsg" class="muted"></p>
   </section>
 
-  <!-- DASHBOARD -->
+  <!-- DASHBOARD / ADMIN -->
   <section id="dashboard" class="card tab beranda-tab" style="display:none">
     <h1>Dashboard Tabungan</h1>
     <p id="msg" class="warn"></p>
@@ -66,12 +66,14 @@
       <select id="aksiEdit">
         <option value="tambah">Tambah Saldo</option>
         <option value="kurangi">Kurangi Saldo</option>
+        <option value="koreksi">Koreksi (Penyesuaian)</option>
       </select>
+      <input id="catatanEdit" placeholder="Catatan (opsional)" style="flex:1;min-width:220px">
       <button id="btnEdit">Simpan</button>
     </div>
   </section>
 
-  <!-- TAB NASABAH (hanya daftar ringkas) -->
+  <!-- TAB NASABAH (ringkas) -->
   <section id="nasabah-tab" class="card tab nasabah-tab" style="display:none">
     <h2>Nasabah</h2>
     <table id="tNasabah2" class="table">
@@ -82,22 +84,35 @@
 
   <!-- HALAMAN PUBLIK: /?n=Nama -->
   <section id="public-view" class="card" style="display:none">
-    <h1 id="pv-title">Tabungan</h1>
+    <div class="trust">
+      <strong>Tabunganmu aman 100%</strong> — bisa ditarik kapan saja di <strong>Hepi Susanto</strong>.
+      <br>Tanpa biaya admin untuk simpan setelah 1 bulan.
+    </div>
+
+    <h1 id="pv-title" class="mt16">Halo, ...</h1>
     <p class="muted" id="pv-note">Tautan pribadi nasabah.</p>
+
     <div class="stat big">
       <small>Saldo Anda</small>
       <h2 id="pv-saldo">Rp 0</h2>
     </div>
 
     <div class="row">
-      <input id="pv-amount" placeholder="Nominal (contoh 100000)" inputmode="numeric">
+      <input id="pv-amount" placeholder="Nominal (contoh 100.000)" inputmode="numeric">
     </div>
     <div class="row">
       <button id="pv-add">Tambah Tabungan</button>
       <button id="pv-withdraw" class="secondary">Tarik Tabungan</button>
     </div>
 
-    <div class="muted small">Aksi akan membuka WhatsApp ke admin.</div>
+    <div class="divider"></div>
+    <h2>Riwayat Transaksi</h2>
+    <div id="pv-empty" class="muted">Belum ada transaksi.</div>
+    <table id="pv-history" class="table">
+      <thead><tr><th>Tanggal</th><th>Jenis</th><th>Nominal</th><th>Catatan</th></tr></thead>
+      <tbody></tbody>
+    </table>
+    <div class="muted small">Riwayat bersifat informatif. Perubahan saldo resmi dilakukan oleh admin.</div>
   </section>
 
   <footer class="footer"><small>Tabungan v2 • JSONBin + Vercel</small></footer>
