@@ -23,16 +23,24 @@ button.secondary{background:#2b2b2b;border:1px solid #3a3a3a}
 button.danger{background:var(--red)}
 button.small{padding:6px 10px;font-size:.9rem}
 .table{width:100%;border-collapse:collapse;margin-top:8px}
-th,td{border-bottom:1px solid var(--line);padding:10px;text-align:left}
+th,td{border-bottom:1px solid var(--line);padding:10px;text-align:left;vertical-align:top}
 .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:10px 0 16px}
 .stat{background:#111;border:1px solid var(--line);border-radius:12px;padding:12px}
-.stat.big{display:inline-block;min-width:240px}
+.stat.big{display:inline-block;min-width:260px}
 h1,h2{margin:6px 0 8px 0}
 .muted{color:var(--muted)}
 .muted.small{font-size:.85rem}
 .warn{color:#ffcc80}
 .divider{height:1px;background:var(--line);margin:12px 0}
 .footer{opacity:.6;text-align:center;margin-top:16px}
+.mt16{margin-top:16px}
+.trust{background:#0f1a10;border:1px solid #163a18;padding:12px;border-radius:12px}
+
+/* Public history colors */
+.badge{display:inline-block;padding:2px 8px;border-radius:999px;font-size:.85rem;border:1px solid #3a3a3a;background:#222}
+.badge.add{border-color:#234b2a;background:#142016}
+.badge.withdraw{border-color:#4b2323;background:#201414}
+.badge.koreksi{border-color:#3a3a3a;background:#1a1a1a}
 
 @media (max-width: 520px){
   .stats{grid-template-columns:1fr}
