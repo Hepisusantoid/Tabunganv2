@@ -9,8 +9,8 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
-  <!-- NAV -->
-  <header class="topbar">
+  <!-- NAV (disembunyikan otomatis di link publik) -->
+  <header class="topbar" id="topbar">
     <nav class="nav">
       <a href="#" data-tab="beranda" class="chip active">Beranda</a>
       <a href="#" data-tab="nasabah" class="chip">Nasabah</a>
@@ -59,18 +59,21 @@
       <button id="btnTambah">Tambah Nasabah</button>
     </div>
 
-    <h2>Edit Saldo</h2>
+    <h2>Edit Saldo (dengan Tanggal)</h2>
     <div class="row">
       <input id="namaEdit" placeholder="Nama Nasabah">
       <input id="saldoEdit" placeholder="Jumlah" inputmode="numeric">
-      <select id="aksiEdit">
+      <select id="aksiEdit" title="Jenis aksi">
         <option value="tambah">Tambah Saldo</option>
-        <option value="kurangi">Kurangi Saldo</option>
+        <option value="kurangi">Tarik Saldo</option>
         <option value="koreksi">Koreksi (Penyesuaian)</option>
       </select>
+      <input id="tglEdit" type="date" title="Tanggal (opsional)">
+      <input id="jamEdit" type="time" step="60" title="Jam (opsional)">
       <input id="catatanEdit" placeholder="Catatan (opsional)" style="flex:1;min-width:220px">
       <button id="btnEdit">Simpan</button>
     </div>
+    <div class="muted small">Jika tanggal/jam kosong, akan memakai waktu saat ini.</div>
   </section>
 
   <!-- TAB NASABAH (ringkas) -->
@@ -82,7 +85,7 @@
     </table>
   </section>
 
-  <!-- HALAMAN PUBLIK: /?n=Nama -->
+  <!-- HALAMAN PUBLIK: /?n=Nama (tanpa nav/footer) -->
   <section id="public-view" class="card" style="display:none">
     <div class="trust">
       <strong>Tabunganmu aman 100%</strong> — bisa ditarik kapan saja di <strong>Hepi Susanto</strong>.
@@ -114,8 +117,6 @@
     </table>
     <div class="muted small">Riwayat bersifat informatif. Perubahan saldo resmi dilakukan oleh admin.</div>
   </section>
-
-  <footer class="footer"><small>Tabungan v2 • JSONBin + Vercel</small></footer>
 
   <script src="/app.js"></script>
 </body>
