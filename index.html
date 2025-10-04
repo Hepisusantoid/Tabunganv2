@@ -9,18 +9,15 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
-  <!-- NAV (disembunyikan otomatis di link publik) -->
+  <!-- NAV: Beranda saja (disembunyikan otomatis di link publik) -->
   <header class="topbar" id="topbar">
     <nav class="nav">
       <a href="#" data-tab="beranda" class="chip active">Beranda</a>
-      <a href="#" data-tab="nasabah" class="chip">Nasabah</a>
-      <a href="#" data-tab="admin" class="chip">Admin</a>
-      <a href="#" id="nav-logout" class="chip danger" style="display:none">Logout</a>
     </nav>
   </header>
 
   <!-- LOGIN -->
-  <section id="login-section" class="card tab admin-tab">
+  <section id="login-section" class="card tab beranda-tab">
     <h2>Login Admin</h2>
     <div class="row">
       <input id="user" placeholder="Username">
@@ -30,9 +27,12 @@
     <p id="loginMsg" class="muted"></p>
   </section>
 
-  <!-- DASHBOARD / ADMIN -->
+  <!-- DASHBOARD / ADMIN (tetap di Beranda) -->
   <section id="dashboard" class="card tab beranda-tab" style="display:none">
-    <h1>Dashboard Tabungan</h1>
+    <div class="row between">
+      <h1>Dashboard Tabungan</h1>
+      <button id="btnLogout" class="secondary small">Keluar</button>
+    </div>
     <p id="msg" class="warn"></p>
 
     <div class="stats">
@@ -44,11 +44,13 @@
     <div class="divider"></div>
 
     <h2>Daftar Nasabah</h2>
-    <div class="muted">Tekan “Link” untuk salin tautan publik nasabah (tanpa login).</div>
-    <table id="tNasabah" class="table">
-      <thead><tr><th>Nama</th><th>Saldo</th><th>Aksi</th><th>Link</th></tr></thead>
-      <tbody></tbody>
-    </table>
+    <div class="muted">Tekan “Link” untuk salin tautan publik (tanpa login).</div>
+    <div class="table-wrap">
+      <table id="tNasabah" class="table">
+        <thead><tr><th>Nama</th><th>Saldo</th><th>Aksi</th><th>Link</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
 
     <div class="divider"></div>
 
@@ -73,23 +75,14 @@
       <input id="catatanEdit" placeholder="Catatan (opsional)" style="flex:1;min-width:220px">
       <button id="btnEdit">Simpan</button>
     </div>
-    <div class="muted small">Jika tanggal/jam kosong, akan memakai waktu saat ini.</div>
+    <div class="muted small">Jika tanggal/jam kosong, sistem memakai waktu saat ini.</div>
   </section>
 
-  <!-- TAB NASABAH (ringkas) -->
-  <section id="nasabah-tab" class="card tab nasabah-tab" style="display:none">
-    <h2>Nasabah</h2>
-    <table id="tNasabah2" class="table">
-      <thead><tr><th>Nama</th><th>Saldo</th><th>Link</th></tr></thead>
-      <tbody></tbody>
-    </table>
-  </section>
-
-  <!-- HALAMAN PUBLIK: /?n=Nama (tanpa nav/footer) -->
+  <!-- HALAMAN PUBLIK: /?n=Nama -->
   <section id="public-view" class="card" style="display:none">
     <div class="trust">
-      <strong>Tabunganmu aman 100%</strong> — bisa ditarik kapan saja di <strong>Hepi Susanto</strong>.
-      <br>Tanpa biaya admin untuk simpan setelah 1 bulan.
+      <strong>Lebih simpel dari bank</strong> — tanpa ribet, tanpa antre, dan gratis simpan setelah 1 bulan.
+      <br>Tarik kapan saja langsung ke <strong>Hepi Susanto</strong>, cair cepat via WhatsApp.
     </div>
 
     <h1 id="pv-title" class="mt16">Halo, ...</h1>
@@ -111,10 +104,12 @@
     <div class="divider"></div>
     <h2>Riwayat Transaksi</h2>
     <div id="pv-empty" class="muted">Belum ada transaksi.</div>
-    <table id="pv-history" class="table">
-      <thead><tr><th>Tanggal</th><th>Jenis</th><th>Nominal</th><th>Catatan</th></tr></thead>
-      <tbody></tbody>
-    </table>
+    <div class="table-wrap">
+      <table id="pv-history" class="table">
+        <thead><tr><th>Tanggal</th><th>Jenis</th><th>Nominal</th><th>Catatan</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
     <div class="muted small">Riwayat bersifat informatif. Perubahan saldo resmi dilakukan oleh admin.</div>
   </section>
 
