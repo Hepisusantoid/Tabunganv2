@@ -1,5 +1,3 @@
-const fmt = n => new Intl.NumberFormat('id-ID',{style:'currency',currency:'IDR',maximumFractionDigits:0}).format(n||0);
-
 const els = {
   login: document.getElementById('login-section'),
   dash: document.getElementById('dashboard'),
@@ -21,58 +19,56 @@ const els = {
 };
 
 let state = { nasabah: [] };
+const fmt = n => new Intl.NumberFormat('id-ID',{style:'currency',currency:'IDR',maximumFractionDigits:0}).format(Number(n)||0);
 
-function isLogged() { return localStorage.getItem('tabungan_logged') === '1'; }
-function setLogged(v){
-  if(v){ localStorage.setItem('tabungan_logged','1'); }
-  else { localStorage.removeItem('tabungan_logged'); }
-  renderGate();
-}
+function isLogged(){ return localStorage.getItem('tabungan_logged') === '1'; }
+function setLogged(v){ v ? localStorage.setItem('tabungan_logged','1') : localStorage.removeItem('tabungan_logged'); renderGate(); }
 function renderGate(){
   const ok = isLogged();
   els.login.style.display = ok ? 'none' : 'block';
-  els.dash.style.display = ok ? 'block' : 'none';
+  els.dash.style.display  = ok ? 'block' : 'none';
   els.navLogout.style.display = ok ? 'inline-block' : 'none';
   if (ok) loadData();
 }
 
 async function callGet(){
   const r = await fetch('/api/get');
-  if (!r.ok) throw new Error('Gagal mengambil data');
-  return r.json();
+  const t = await r.text(); let j; try{ j=JSON.parse(t); } catch{ j={raw:t}; }
+  if(!r.ok) throw new Error(`GET ${r.status}: ${j.error||j.message||JSON.stringify(j)}`);
+  return j;
 }
-
 async function callPut(payload){
   const r = await fetch('/api/put',{ method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
-  if (!r.ok) throw new Error('Gagal menyimpan data');
-  return r.json();
+  const t = await r.text(); let j; try{ j=JSON.parse(t); } catch{ j={raw:t}; }
+  if(!r.ok) throw new Error(`PUT ${r.status}: ${j.error||j.message||JSON.stringify(j)}`);
+  return j;
 }
 
 function renderTable(){
   const list = state.nasabah || [];
   els.tBody.innerHTML = '';
   let total = 0;
-  list.forEach(item => {
+  list.forEach(item=>{
     total += Number(item.saldo||0);
     const tr = document.createElement('tr');
     tr.innerHTML = `
       <td>${item.nama}</td>
       <td>${fmt(item.saldo||0)}</td>
-      <td><button data-del="${item.nama}">Hapus</button></td>`;
+      <td><button class="danger" data-del="${item.nama}">Hapus</button></td>
+    `;
     els.tBody.appendChild(tr);
   });
   els.statNasabah.textContent = list.length;
-  els.statSaldo.textContent = fmt(total);
-  els.statRata.textContent = fmt(list.length ? Math.round(total/list.length) : 0);
-  // Hapus
+  els.statSaldo.textContent   = fmt(total);
+  els.statRata.textContent    = fmt(list.length ? Math.round(total/list.length) : 0);
+
   els.tBody.querySelectorAll('button[data-del]').forEach(btn=>{
-    btn.addEventListener('click', async () => {
+    btn.addEventListener('click', async ()=>{
       const nama = btn.getAttribute('data-del');
-      state.nasabah = (state.nasabah||[]).filter(x => x.nama !== nama);
-      try{
-        await callPut(state);
-        renderTable();
-      }catch(e){ alert(e.message); }
+      if(!confirm(`Hapus nasabah "${nama}"?`)) return;
+      state.nasabah = (state.nasabah||[]).filter(x=>x.nama !== nama);
+      try{ await callPut(state); renderTable(); }
+      catch(e){ alert(e.message); }
     });
   });
 }
@@ -80,12 +76,12 @@ function renderTable(){
 async function loadData(){
   try{
     const data = await callGet();
-    // Pastikan struktur
     if (!Array.isArray(data.nasabah)) data.nasabah = [];
     state = data;
     renderTable();
+    els.msg.textContent = '';
   }catch(e){
-    els.msg.textContent = e.message;
+    els.msg.textContent = 'GET error → ' + e.message;
   }
 }
 
@@ -100,22 +96,24 @@ els.btnLogin.addEventListener('click', async ()=>{
     setLogged(true);
   }catch(e){ els.loginMsg.textContent = 'Error login'; }
 });
-
-document.getElementById('nav-logout').addEventListener('click', ()=> setLogged(false));
+els.navLogout.addEventListener('click', ()=> setLogged(false));
 
 // Tambah nasabah
 els.btnTambah.addEventListener('click', async ()=>{
-  const nama = (els.namaBaru.value||'').trim();
+  const nama  = (els.namaBaru.value||'').trim();
   const saldo = Number((els.saldoBaru.value||'0').replace(/[^\d]/g,'')) || 0;
   if(!nama){ alert('Nama wajib'); return; }
   const exists = (state.nasabah||[]).some(x => x.nama.toLowerCase() === nama.toLowerCase());
   if(exists){ alert('Nama sudah ada'); return; }
   state.nasabah = [...(state.nasabah||[]), { nama, saldo }];
-  try{ await callPut(state); els.namaBaru.value=''; els.saldoBaru.value=''; renderTable(); }
-  catch(e){ alert(e.message); }
+  try{
+    await callPut(state);
+    els.namaBaru.value=''; els.saldoBaru.value='';
+    renderTable();
+  }catch(e){ alert(e.message); }
 });
 
-// Edit saldo (tambah/kurangi)
+// Edit saldo
 els.btnEdit.addEventListener('click', async ()=>{
   const nama = (els.namaEdit.value||'').trim();
   let jumlah = Number((els.saldoEdit.value||'0').replace(/[^\d]/g,'')) || 0;
@@ -123,12 +121,17 @@ els.btnEdit.addEventListener('click', async ()=>{
   const idx = (state.nasabah||[]).findIndex(x => x.nama.toLowerCase() === nama.toLowerCase());
   if(idx<0){ alert('Nasabah tidak ditemukan'); return; }
   if(els.aksiEdit.value === 'kurangi') jumlah = -Math.abs(jumlah);
+
   const clone = [...state.nasabah];
-  clone[idx] = {...clone[idx], saldo: Math.max(0, Number(clone[idx].saldo||0) + jumlah)};
+  clone[idx] = { ...clone[idx], saldo: Math.max(0, Number(clone[idx].saldo||0) + jumlah) };
   state.nasabah = clone;
-  try{ await callPut(state); els.saldoEdit.value=''; renderTable(); }
-  catch(e){ alert(e.message); }
+
+  try{
+    await callPut(state);
+    els.saldoEdit.value='';
+    renderTable();
+  }catch(e){ alert(e.message); }
 });
 
-// Auto-gate saat load
+// Start
 renderGate();
