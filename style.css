@@ -1,0 +1,10 @@
+body{font-family:Inter,system-ui,Arial,sans-serif;margin:0;padding:20px;background:#0e0e0e;color:#f5f5f5}
+nav{display:flex;gap:12px;margin-bottom:16px}
+nav a{color:#ddd;text-decoration:none;padding:6px 10px;background:#1c1c1c;border-radius:8px}
+section{background:#141414;border:1px solid #232323;border-radius:12px;padding:16px;margin-bottom:18px}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.stats>div{background:#1a1a1a;border:1px solid #262626;border-radius:12px;padding:12px}
+table{width:100%;border-collapse:collapse;margin-top:8px}
+th,td{border-bottom:1px solid #2a2a2a;padding:8px;text-align:left}
+button{background:#2e7d32;border:none;color:#fff;padding:8px 12px;border-radius:10px;cursor:pointer}
+input,select{background:#1a1a1a;border:1px solid #2a2a2a;color:#fff;padding:8px;border-radius:10px;margin-right:8px;margin-bottom:8px}
