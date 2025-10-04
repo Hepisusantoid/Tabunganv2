@@ -1,4 +1,4 @@
-export const config = { runtime: 'nodejs18.x' };
+// export const config = { runtime: 'nodejs18.x' }; // HAPUS / GANTI
 
 export default async function handler(req, res) {
   try {
