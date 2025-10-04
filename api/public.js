@@ -16,7 +16,11 @@ export default async function handler(req, res) {
     const raw = await r.text(); let json; try { json = JSON.parse(raw); } catch { json = { raw }; }
     if (!r.ok) return res.status(r.status).json({ error: 'JSONBIN_GET_NON_200', status: r.status, detail: json });
 
-    const list = (json?.record?.nasabah || []).map(x => ({ nama: x.nama, saldo: Number(x.saldo || 0) }));
+    const list = (json?.record?.nasabah || []).map(x => ({
+      nama: x.nama,
+      saldo: Number(x.saldo || 0),
+      history: Array.isArray(x.history) ? x.history : [] // [{ts, type, amount, note}]
+    }));
     const found = list.find(x => (x.nama || '').toLowerCase() === q.toLowerCase());
     if (!found) return res.status(404).json({ found: false, message: 'Nasabah tidak ditemukan' });
 
