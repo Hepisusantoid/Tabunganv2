@@ -21,6 +21,7 @@ const els = {
   namaEdit: document.getElementById('namaEdit'),
   saldoEdit: document.getElementById('saldoEdit'),
   aksiEdit: document.getElementById('aksiEdit'),
+  catatanEdit: document.getElementById('catatanEdit'),
   btnEdit: document.getElementById('btnEdit'),
   btnLogin: document.getElementById('btnLogin'),
   loginMsg: document.getElementById('loginMsg'),
@@ -33,11 +34,34 @@ const els = {
   pvAmount: document.getElementById('pv-amount'),
   pvAdd: document.getElementById('pv-add'),
   pvWithdraw: document.getElementById('pv-withdraw'),
+  pvHistory: document.querySelector('#pv-history tbody'),
+  pvEmpty: document.getElementById('pv-empty'),
 };
 
 let state = { nasabah: [] };
-const fmt = n => new Intl.NumberFormat('id-ID',{style:'currency',currency:'IDR',maximumFractionDigits:0}).format(Number(n)||0);
 const origin = (location.origin || '').replace(/\/$/,'');
+
+// ====== FORMAT ======
+const fmt = n => new Intl.NumberFormat('id-ID',{style:'currency',currency:'IDR',maximumFractionDigits:0}).format(Number(n)||0);
+const fmtNum = n => new Intl.NumberFormat('id-ID',{maximumFractionDigits:0}).format(Number(n)||0); // tanpa Rp
+const parseNum = s => Number((s||'').toString().replace(/[^\d]/g,'')) || 0;
+
+// live thousand-sep with dot
+function maskThousands(el){
+  el.addEventListener('input', ()=>{
+    const pos = el.selectionStart;
+    const prev = el.value;
+    const raw = parseNum(prev);
+    el.value = fmtNum(raw);
+    // best effort keep caret near end
+    el.setSelectionRange(el.value.length, el.value.length);
+  });
+}
+// apply masks
+['saldoBaru','saldoEdit','pv-amount'].forEach(id=>{
+  const el = document.getElementById(id);
+  if (el) maskThousands(el);
+});
 
 // ====== MODE: PUBLIC VIEW ======
 const params = new URLSearchParams(location.search);
@@ -87,16 +111,14 @@ function renderGate(){
   if (ok) loadData();
 }
 
-// ====== TABS (Beranda/Nasabah/Admin) ======
+// ====== TABS ======
 function setupTabs(){
   els.tabs.forEach(a=>{
     a.addEventListener('click', (e)=>{
       e.preventDefault();
       const tab = a.getAttribute('data-tab');
-      // set active
       els.tabs.forEach(x=>x.classList.remove('active'));
       a.classList.add('active');
-      // show/hide
       document.querySelectorAll('.tab').forEach(el=>el.style.display='none');
       if (tab === 'beranda') els.dash.style.display='block';
       if (tab === 'nasabah') els.nasabahTab.style.display='block';
@@ -109,13 +131,11 @@ function setupTabs(){
 // ====== RENDER TABEL ======
 function renderTables(){
   const list = state.nasabah || [];
-  // stats
   let total = 0; list.forEach(x=> total += Number(x.saldo||0));
   els.statNasabah.textContent = list.length;
   els.statSaldo.textContent   = fmt(total);
   els.statRata.textContent    = fmt(list.length ? Math.round(total/list.length) : 0);
 
-  // main table
   els.tBody.innerHTML = '';
   list.forEach(item=>{
     const tr = document.createElement('tr');
@@ -133,7 +153,6 @@ function renderTables(){
     els.tBody.appendChild(tr);
   });
 
-  // second table (Nasabah tab)
   els.tBody2.innerHTML = '';
   list.forEach(item=>{
     const tr = document.createElement('tr');
@@ -147,7 +166,6 @@ function renderTables(){
   });
 
   // actions
-  // delete
   els.tBody.querySelectorAll('button[data-del]').forEach(btn=>{
     btn.addEventListener('click', async ()=>{
       const nama = btn.getAttribute('data-del');
@@ -157,7 +175,6 @@ function renderTables(){
       catch(e){ alert(e.message); }
     });
   });
-  // copy link
   els.tBody.querySelectorAll('button[data-copy]').forEach(btn=>{
     btn.addEventListener('click', async ()=>{
       const url = btn.getAttribute('data-copy');
@@ -172,6 +189,8 @@ async function loadData(){
   try{
     const data = await callGet();
     if (!Array.isArray(data.nasabah)) data.nasabah = [];
+    // Pastikan setiap nasabah punya history array
+    data.nasabah = data.nasabah.map(x => ({ ...x, history: Array.isArray(x.history) ? x.history : [] }));
     state = data;
     renderTables();
     els.msg.textContent = '';
@@ -181,14 +200,40 @@ async function loadData(){
 }
 
 // ====== PUBLIC VIEW ======
+function renderPublicHistory(list){
+  els.pvHistory.innerHTML = '';
+  if (!Array.isArray(list) || list.length === 0){
+    els.pvEmpty.style.display = 'block';
+    return;
+  }
+  els.pvEmpty.style.display = 'none';
+  // terbaru di atas
+  const sorted = [...list].sort((a,b)=> (b.ts||0) - (a.ts||0));
+  sorted.forEach(it=>{
+    const tr = document.createElement('tr');
+    const d = new Date(it.ts || Date.now());
+    const tgl = d.toLocaleString('id-ID', { dateStyle:'medium', timeStyle:'short' });
+    const jenis = (it.type || 'koreksi').toLowerCase();
+    const badgeClass = jenis === 'tambah' ? 'add' : jenis === 'tarik' ? 'withdraw' : 'koreksi';
+    tr.innerHTML = `
+      <td>${tgl}</td>
+      <td><span class="badge ${badgeClass}">${jenis[0].toUpperCase()+jenis.slice(1)}</span></td>
+      <td>${fmt(it.amount||0)}</td>
+      <td>${it.note ? it.note : '-'}</td>
+    `;
+    els.pvHistory.appendChild(tr);
+  });
+}
+
 async function loadPublic(name){
   try{
     const nas = await callPublic(name);
     els.pvTitle.textContent = `Halo, ${nas.nama}`;
     els.pvSaldo.textContent = fmt(nas.saldo || 0);
+    renderPublicHistory(nas.history || []);
 
     const wa = (type, amount) => {
-      const nominal = Number((amount||'').toString().replace(/[^\d]/g,''))||0;
+      const nominal = parseNum(amount);
       const action = type === 'add' ? 'Tambah Tabungan' : 'Tarik Tabungan';
       const msg = `Halo Mas Hepi, saya *${nas.nama}* ingin *${action}* sebesar *${fmt(nominal)}*. (Link: ${origin}/?n=${encodeURIComponent(nas.nama)})`;
       return `https://wa.me/6285346861655?text=${encodeURIComponent(msg)}`;
@@ -196,12 +241,12 @@ async function loadPublic(name){
 
     els.pvAdd.addEventListener('click', ()=>{
       const a = els.pvAmount.value;
-      if(!a){ alert('Isi nominal dulu'); return; }
+      if(!parseNum(a)){ alert('Isi nominal dulu'); return; }
       location.href = wa('add', a);
     });
     els.pvWithdraw.addEventListener('click', ()=>{
       const a = els.pvAmount.value;
-      if(!a){ alert('Isi nominal dulu'); return; }
+      if(!parseNum(a)){ alert('Isi nominal dulu'); return; }
       location.href = wa('withdraw', a);
     });
   }catch(e){
@@ -219,7 +264,6 @@ document.getElementById('btnLogin')?.addEventListener('click', async ()=>{
     const j = await r.json();
     if(!r.ok || !j.ok){ els.loginMsg.textContent = j.message || 'Login gagal'; return; }
     setLogged(true);
-    // pindah ke beranda tab
     document.querySelector('.nav a[data-tab="beranda"]')?.click();
   }catch(e){ els.loginMsg.textContent = 'Error login'; }
 });
@@ -228,25 +272,56 @@ els.navLogout?.addEventListener('click', ()=> setLogged(false));
 // ====== ADMIN ACTIONS ======
 els.btnTambah?.addEventListener('click', async ()=>{
   const nama  = (els.namaBaru.value||'').trim();
-  const saldo = Number((els.saldoBaru.value||'0').replace(/[^\d]/g,'')) || 0;
+  const saldo = parseNum(els.saldoBaru.value);
   if(!nama){ alert('Nama wajib'); return; }
   const exists = (state.nasabah||[]).some(x => x.nama.toLowerCase() === nama.toLowerCase());
   if(exists){ alert('Nama sudah ada'); return; }
-  state.nasabah = [...(state.nasabah||[]), { nama, saldo }];
+  const now = Date.now();
+  const history = saldo > 0 ? [{ ts: now, type: 'tambah', amount: saldo, note: 'Setoran awal' }] : [];
+  state.nasabah = [...(state.nasabah||[]), { nama, saldo, history }];
   try{ await callPut(state); els.namaBaru.value=''; els.saldoBaru.value=''; renderTables(); }
   catch(e){ alert(e.message); }
 });
 
 els.btnEdit?.addEventListener('click', async ()=>{
   const nama = (els.namaEdit.value||'').trim();
-  let jumlah = Number((els.saldoEdit.value||'0').replace(/[^\d]/g,'')) || 0;
+  let jumlah = parseNum(els.saldoEdit.value);
+  const mode = els.aksiEdit.value; // tambah/kurangi/koreksi
+  const note = (els.catatanEdit.value||'').trim();
+
   if(!nama || !jumlah){ alert('Lengkapi nama & jumlah'); return; }
   const idx = (state.nasabah||[]).findIndex(x => x.nama.toLowerCase() === nama.toLowerCase());
   if(idx<0){ alert('Nasabah tidak ditemukan'); return; }
-  if(els.aksiEdit.value === 'kurangi') jumlah = -Math.abs(jumlah);
-  const clone = [...state.nasabah];
-  clone[idx] = { ...clone[idx], saldo: Math.max(0, Number(clone[idx].saldo||0) + jumlah) };
-  state.nasabah = clone;
-  try{ await callPut(state); els.saldoEdit.value=''; renderTables(); }
-  catch(e){ alert(e.message); }
+
+  const list = [...state.nasabah];
+  const curr = { ...list[idx] };
+  curr.history = Array.isArray(curr.history) ? curr.history : [];
+
+  const now = Date.now();
+  let delta = jumlah;
+
+  if(mode === 'kurangi'){ delta = -Math.abs(jumlah); }
+  if(mode === 'koreksi'){
+    // koreksi langsung set menjadi jumlah absolut (saldo = jumlah)
+    delta = jumlah - Number(curr.saldo||0);
+  }
+
+  const newSaldo = Math.max(0, Number(curr.saldo||0) + delta);
+  const entry = {
+    ts: now,
+    type: mode === 'koreksi' ? 'koreksi' : (delta >= 0 ? 'tambah' : 'tarik'),
+    amount: Math.abs(delta),
+    note: note || (mode==='koreksi' ? 'Penyesuaian saldo' : (delta>=0?'Setoran':'Penarikan'))
+  };
+
+  curr.saldo = newSaldo;
+  curr.history = [...curr.history, entry];
+  list[idx] = curr;
+  state.nasabah = list;
+
+  try{
+    await callPut(state);
+    els.saldoEdit.value=''; els.catatanEdit.value='';
+    renderTables();
+  }catch(e){ alert(e.message); }
 });
