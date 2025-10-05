@@ -27,7 +27,7 @@
     <p id="loginMsg" class="muted"></p>
   </section>
 
-  <!-- DASHBOARD / ADMIN (tetap di Beranda) -->
+  <!-- DASHBOARD / ADMIN -->
   <section id="dashboard" class="card tab beranda-tab" style="display:none">
     <div class="row between">
       <h1>Dashboard Tabungan</h1>
@@ -44,7 +44,7 @@
     <div class="divider"></div>
 
     <h2>Daftar Nasabah</h2>
-    <div class="muted">Tekan “Link” untuk salin tautan publik (tanpa login).</div>
+    <div class="muted">Klik “Buka” untuk lihat halaman publik nasabah, atau “Salin” untuk menyalin tautan.</div>
     <div class="table-wrap">
       <table id="tNasabah" class="table">
         <thead><tr><th>Nama</th><th>Saldo</th><th>Aksi</th><th>Link</th></tr></thead>
@@ -63,7 +63,8 @@
 
     <h2>Edit Saldo (dengan Tanggal)</h2>
     <div class="row">
-      <input id="namaEdit" placeholder="Nama Nasabah">
+      <!-- dropdown nama nasabah -->
+      <select id="namaEditSel" title="Pilih Nasabah"></select>
       <input id="saldoEdit" placeholder="Jumlah" inputmode="numeric">
       <select id="aksiEdit" title="Jenis aksi">
         <option value="tambah">Tambah Saldo</option>
@@ -76,16 +77,41 @@
       <button id="btnEdit">Simpan</button>
     </div>
     <div class="muted small">Jika tanggal/jam kosong, sistem memakai waktu saat ini.</div>
+
+    <div class="divider"></div>
+
+    <h2>Kelola Riwayat Transaksi</h2>
+    <div class="row">
+      <select id="riwNama" title="Pilih Nasabah"></select>
+      <button id="riwRefresh" class="secondary small">Muat Riwayat</button>
+    </div>
+    <div id="riwEmpty" class="muted" style="display:none">Belum ada riwayat.</div>
+    <div class="table-wrap">
+      <table id="riwTable" class="table">
+        <thead><tr><th>#</th><th>Tanggal</th><th>Jenis</th><th>Nominal</th><th>Catatan</th><th>Hapus</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+    <div class="muted small">Menghapus riwayat <em>tidak</em> mengubah saldo (hanya catatan).</div>
+
+    <div class="divider"></div>
+
+    <h2>Edit Nama Nasabah</h2>
+    <div class="row">
+      <select id="oldNameSel" title="Nama Lama"></select>
+      <input id="newName" placeholder="Nama Baru">
+      <button id="btnRename">Ubah Nama</button>
+    </div>
   </section>
 
-  <!-- HALAMAN PUBLIK: /?n=Nama -->
+  <!-- HALAMAN PUBLIK: /?n=Nama (JS akan menampilkan ini pada mode publik) -->
   <section id="public-view" class="card" style="display:none">
     <div class="trust">
       <strong>Lebih simpel dari bank</strong> — tanpa ribet, tanpa antre, dan gratis simpan setelah 1 bulan.
       <br>Tarik kapan saja langsung ke <strong>Hepi Susanto</strong>, cair cepat via WhatsApp.
     </div>
 
-    <h1 id="pv-title" class="mt16">Halo ini Tabunganmu sekarang, ...</h1>
+    <h1 id="pv-title" class="mt16">Halo, ...</h1>
     <p class="muted" id="pv-note">Tautan pribadi nasabah.</p>
 
     <div class="stat big">
