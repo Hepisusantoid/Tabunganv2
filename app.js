@@ -17,13 +17,26 @@ const els = {
   namaBaru: document.getElementById('namaBaru'),
   saldoBaru: document.getElementById('saldoBaru'),
   btnTambah: document.getElementById('btnTambah'),
-  namaEdit: document.getElementById('namaEdit'),
+
+  namaEditSel: document.getElementById('namaEditSel'),
   saldoEdit: document.getElementById('saldoEdit'),
   aksiEdit: document.getElementById('aksiEdit'),
   tglEdit: document.getElementById('tglEdit'),
   jamEdit: document.getElementById('jamEdit'),
   catatanEdit: document.getElementById('catatanEdit'),
   btnEdit: document.getElementById('btnEdit'),
+
+  // history admin
+  riwNama: document.getElementById('riwNama'),
+  riwRefresh: document.getElementById('riwRefresh'),
+  riwTableBody: document.querySelector('#riwTable tbody'),
+  riwEmpty: document.getElementById('riwEmpty'),
+
+  // rename
+  oldNameSel: document.getElementById('oldNameSel'),
+  newName: document.getElementById('newName'),
+  btnRename: document.getElementById('btnRename'),
+
   btnLogin: document.getElementById('btnLogin'),
   loginMsg: document.getElementById('loginMsg'),
   msg: document.getElementById('msg'),
@@ -101,8 +114,23 @@ function renderGate(){
   if (ok) loadData();
 }
 
+// ====== helpers ======
+function refreshNameLists(){
+  const names = (state.nasabah||[]).map(x=>x.nama).sort((a,b)=>a.localeCompare(b,'id'));
+  const makeOptions = (sel) => { sel.innerHTML = names.map(n=>`<option value="${n}">${n}</option>`).join(''); };
+  if (els.namaEditSel) makeOptions(els.namaEditSel);
+  if (els.riwNama) makeOptions(els.riwNama);
+  if (els.oldNameSel) makeOptions(els.oldNameSel);
+}
+
+function findNasabahIndexByName(name){
+  return (state.nasabah||[]).findIndex(x => (x.nama||'').toLowerCase() === (name||'').toLowerCase());
+}
+
 // ====== render admin ======
 function renderAdmin(){
+  refreshNameLists();
+
   const list = state.nasabah || [];
   let total = 0; list.forEach(x=> total += Number(x.saldo||0));
   els.statNasabah.textContent = list.length;
@@ -116,12 +144,18 @@ function renderAdmin(){
     tr.innerHTML = `
       <td>${item.nama}</td>
       <td>${fmt(item.saldo||0)}</td>
-      <td><button class="danger small" data-del="${item.nama}">Hapus</button></td>
-      <td><button class="small" data-copy="${link}">Link</button></td>
+      <td>
+        <button class="danger small" data-del="${item.nama}">Hapus</button>
+      </td>
+      <td>
+        <a class="small chip" href="${link}" target="_blank" rel="noopener">Buka</a>
+        <button class="small" data-copy="${link}">Salin</button>
+      </td>
     `;
     els.tBody.appendChild(tr);
   });
 
+  // actions
   els.tBody.querySelectorAll('button[data-del]').forEach(btn=>{
     btn.addEventListener('click', async ()=>{
       const nama = btn.getAttribute('data-del');
@@ -134,7 +168,7 @@ function renderAdmin(){
   els.tBody.querySelectorAll('button[data-copy]').forEach(btn=>{
     btn.addEventListener('click', async ()=>{
       const url = btn.getAttribute('data-copy');
-      try{ await navigator.clipboard.writeText(url); btn.textContent='Disalin!'; setTimeout(()=>btn.textContent='Link',1500); }
+      try{ await navigator.clipboard.writeText(url); btn.textContent='Disalin!'; setTimeout(()=>btn.textContent='Salin',1500); }
       catch{ prompt('Salin link ini:', url); }
     });
   });
@@ -187,20 +221,18 @@ async function loadPublic(name){
     };
 
     els.pvAdd.addEventListener('click', ()=>{
-      const a = els.pvAmount.value;
-      const n = parseNum(a);
+      const n = parseNum(els.pvAmount.value);
       if(!n){ alert('Isi nominal dulu'); return; }
-      location.href = wa('add', a);
+      location.href = wa('add', n);
     });
     els.pvWithdraw.addEventListener('click', ()=>{
-      const a = els.pvAmount.value;
-      const n = parseNum(a);
+      const n = parseNum(els.pvAmount.value);
       if(!n){ alert('Isi nominal dulu'); return; }
-      if (n > Number(nas.saldo||0)) { // VALIDASI PUBLIK
+      if (n > Number(nas.saldo||0)) { // validasi publik
         alert('Nominal penarikan melebihi saldo Anda. Silakan kurangi nominal.');
         return;
       }
-      location.href = wa('withdraw', a);
+      location.href = wa('withdraw', n);
     });
   }catch(e){
     els.pv.style.display = 'block';
@@ -208,7 +240,7 @@ async function loadPublic(name){
   }
 }
 
-// ====== auth events ======
+// ====== AUTH ======
 document.getElementById('btnLogin')?.addEventListener('click', async ()=>{
   const username = document.getElementById('user').value.trim();
   const password = document.getElementById('pass').value.trim();
@@ -221,7 +253,7 @@ document.getElementById('btnLogin')?.addEventListener('click', async ()=>{
 });
 els.btnLogout?.addEventListener('click', ()=> setLogged(false));
 
-// ====== admin actions ======
+// ====== ADMIN: tambah nasabah ======
 els.btnTambah?.addEventListener('click', async ()=>{
   const nama  = (els.namaBaru.value||'').trim();
   const saldo = parseNum(els.saldoBaru.value);
@@ -235,6 +267,7 @@ els.btnTambah?.addEventListener('click', async ()=>{
   catch(e){ alert(e.message); }
 });
 
+// ====== ADMIN: edit saldo ======
 function buildCustomTs(dateStr, timeStr){
   if(!dateStr && !timeStr) return Date.now();
   const [Y,M,D] = (dateStr||'').split('-').map(x=>parseInt(x,10));
@@ -249,14 +282,14 @@ function buildCustomTs(dateStr, timeStr){
 }
 
 els.btnEdit?.addEventListener('click', async ()=>{
-  const nama = (els.namaEdit.value||'').trim();
+  const nama = els.namaEditSel.value;
   let jumlah = parseNum(els.saldoEdit.value);
   const mode = els.aksiEdit.value;
   const note = (els.catatanEdit.value||'').trim();
   const ts   = buildCustomTs(els.tglEdit.value, els.jamEdit.value);
 
-  if(!nama || !jumlah){ alert('Lengkapi nama & jumlah'); return; }
-  const idx = (state.nasabah||[]).findIndex(x => x.nama.toLowerCase() === nama.toLowerCase());
+  if(!nama || !jumlah){ alert('Pilih nama & isi jumlah'); return; }
+  const idx = findNasabahIndexByName(nama);
   if(idx<0){ alert('Nasabah tidak ditemukan'); return; }
 
   const list = [...state.nasabah];
@@ -292,8 +325,74 @@ els.btnEdit?.addEventListener('click', async ()=>{
 
   try{
     await callPut(state);
-    // reset form
     els.saldoEdit.value=''; els.catatanEdit.value=''; els.tglEdit.value=''; els.jamEdit.value='';
     renderAdmin();
+    renderHistoryAdmin(els.riwNama.value); // sinkron jika panel riwayat terbuka
   }catch(e){ alert(e.message); }
 });
+
+// ====== ADMIN: kelola riwayat ======
+function renderHistoryAdmin(name){
+  const idx = findNasabahIndexByName(name);
+  els.riwTableBody.innerHTML = '';
+  if (idx < 0){ els.riwEmpty.style.display='block'; return; }
+
+  const nas = state.nasabah[idx];
+  const list = Array.isArray(nas.history) ? nas.history : [];
+  if (list.length === 0){ els.riwEmpty.style.display='block'; return; }
+
+  els.riwEmpty.style.display='none';
+  const sorted = list.map((x,i)=>({ ...x, _i:i })).sort((a,b)=>(b.ts||0)-(a.ts||0));
+  sorted.forEach((it,row)=>{
+    const d = new Date(it.ts||Date.now());
+    const tgl = d.toLocaleString('id-ID',{ dateStyle:'medium', timeStyle:'short' });
+    const jenis = (it.type||'koreksi').toLowerCase();
+    const cls = jenis==='tambah'?'add':jenis==='tarik'?'withdraw':'koreksi';
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${row+1}</td>
+      <td>${tgl}</td>
+      <td><span class="badge ${cls}">${jenis[0].toUpperCase()+jenis.slice(1)}</span></td>
+      <td>${fmt(it.amount||0)}</td>
+      <td>${it.note||'-'}</td>
+      <td><button class="danger small" data-del-idx="${it._i}" data-name="${nas.nama}">Hapus</button></td>
+    `;
+    els.riwTableBody.appendChild(tr);
+  });
+
+  // aksi hapus
+  els.riwTableBody.querySelectorAll('button[data-del-idx]').forEach(btn=>{
+    btn.addEventListener('click', async ()=>{
+      const i = parseInt(btn.getAttribute('data-del-idx'),10);
+      const nama = btn.getAttribute('data-name');
+      const nidx = findNasabahIndexByName(nama);
+      if (nidx<0) return;
+      if (!confirm('Hapus catatan ini? (Saldo tidak berubah)')) return;
+      const copy = {...state.nasabah[nidx]};
+      copy.history = (copy.history||[]).filter((_,k)=>k!==i);
+      state.nasabah[nidx] = copy;
+      try{ await callPut(state); renderHistoryAdmin(nama); }
+      catch(e){ alert(e.message); }
+    });
+  });
+}
+
+els.riwRefresh?.addEventListener('click', ()=> renderHistoryAdmin(els.riwNama.value));
+els.riwNama?.addEventListener('change', ()=> renderHistoryAdmin(els.riwNama.value));
+
+// ====== ADMIN: rename nasabah ======
+els.btnRename?.addEventListener('click', async ()=>{
+  const oldN = els.oldNameSel.value;
+  const newN = (els.newName.value||'').trim();
+  if (!oldN || !newN){ alert('Pilih nama lama dan isi nama baru'); return; }
+  if (findNasabahIndexByName(newN) >= 0){ alert('Nama baru sudah dipakai'); return; }
+  const idx = findNasabahIndexByName(oldN);
+  if (idx < 0){ alert('Nasabah tidak ditemukan'); return; }
+  state.nasabah[idx] = { ...state.nasabah[idx], nama: newN };
+  try{
+    await callPut(state);
+    els.newName.value='';
+    renderAdmin();
+    renderHistoryAdmin(els.riwNama.value);
+    alert('Nama berhasil diubah');
+  }
