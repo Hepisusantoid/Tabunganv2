@@ -395,4 +395,7 @@ els.btnRename?.addEventListener('click', async ()=>{
     renderAdmin();
     renderHistoryAdmin(els.riwNama.value);
     alert('Nama berhasil diubah');
-  }
+  }catch(e){ alert(e.message); }
+});
+
+// ====== END PUBLIC/ADMIN ======
